@@ -12,8 +12,6 @@ if(EIGEN_Fortran_COMPILER_WORKS)
   endif()
 endif()
 
-add_custom_target(blas)
-
 set(EigenBlas_SRCS  single.cpp double.cpp complex_single.cpp complex_double.cpp xerbla.cpp
                     f2c/srotm.c   f2c/srotmg.c  f2c/drotm.c f2c/drotmg.c
                     f2c/lsame.c   f2c/dspmv.c   f2c/ssbmv.c f2c/chbmv.c
@@ -36,7 +34,10 @@ if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
   target_link_libraries(eigen_blas        ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
 endif()
 
-add_dependencies(blas eigen_blas eigen_blas_static)
+if(EIGEN_ADD_BLAS_LAPACK_TARGETS)
+  add_custom_target(blas)
+  add_dependencies(blas eigen_blas eigen_blas_static)
+endif()
 
 install(TARGETS eigen_blas eigen_blas_static
         RUNTIME DESTINATION bin

@@ -12,7 +12,6 @@ if(EIGEN_Fortran_COMPILER_WORKS)
   endif()
 endif()
 
-add_custom_target(lapack)
 include_directories(../blas)
 
 set(EigenLapack_SRCS
@@ -100,7 +99,10 @@ if(EIGEN_STANDARD_LIBRARIES_TO_LINK_TO)
   target_link_libraries(eigen_lapack        ${EIGEN_STANDARD_LIBRARIES_TO_LINK_TO})
 endif()
 
-add_dependencies(lapack eigen_lapack eigen_lapack_static)
+if(EIGEN_ADD_BLAS_LAPACK_TARGETS)
+  add_custom_target(lapack)
+  add_dependencies(lapack eigen_lapack eigen_lapack_static)
+endif()
 
 install(TARGETS eigen_lapack eigen_lapack_static
         RUNTIME DESTINATION bin
