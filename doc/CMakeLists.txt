@@ -96,7 +96,12 @@ add_custom_target(
 )
 
 add_dependencies(doc-eigen-prerequisites all_snippets all_examples)
-add_dependencies(doc-unsupported-prerequisites unsupported_snippets unsupported_examples)
+if(TARGET unsupported_snippets)
+  add_dependencies(doc-unsupported-prerequisites unsupported_snippets)
+endif()
+if(TARGET unsupported_examples)
+  add_dependencies(doc-unsupported-prerequisites unsupported_examples)
+endif()
 
 add_custom_target(doc ALL
   COMMAND doxygen

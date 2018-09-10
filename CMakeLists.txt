@@ -422,6 +422,25 @@ endif()
 
 add_subdirectory(Eigen)
 
+# blas and lapack
+if(NOT DEFINED EIGEN_ADD_BLAS_LAPACK_TARGETS)
+  set(EIGEN_ADD_BLAS_LAPACK_TARGETS 1)
+endif()
+if(EIGEN_LEAVE_TEST_IN_ALL_TARGET)
+  add_subdirectory(blas)
+  add_subdirectory(lapack)
+else()
+  add_subdirectory(blas EXCLUDE_FROM_ALL)
+  add_subdirectory(lapack EXCLUDE_FROM_ALL)
+endif()
+
+# add SYCL
+option(EIGEN_TEST_SYCL "Add Sycl support." OFF)
+if(EIGEN_TEST_SYCL)
+  set (CMAKE_MODULE_PATH "${CMAKE_ROOT}/Modules" "cmake/Modules/" "${CMAKE_MODULE_PATH}")
+  include(FindComputeCpp)
+endif()
+
 add_subdirectory(doc EXCLUDE_FROM_ALL)
 
 # Setting the variable EIGEN_BUILD_TESTING allows to enable/disable
@@ -442,57 +461,35 @@ if(EIGEN_BUILD_TESTING)
   else()
     add_subdirectory(test EXCLUDE_FROM_ALL)
   endif()
-endif()
 
-if(NOT DEFINED EIGEN_ADD_BLAS_LAPACK_TARGETS)
-  set(EIGEN_ADD_BLAS_LAPACK_TARGETS 1)
-endif()
+  add_subdirectory(unsupported)
+  add_subdirectory(demos EXCLUDE_FROM_ALL)
 
-if(EIGEN_LEAVE_TEST_IN_ALL_TARGET)
-  add_subdirectory(blas)
-  add_subdirectory(lapack)
-else()
-  add_subdirectory(blas EXCLUDE_FROM_ALL)
-  add_subdirectory(lapack EXCLUDE_FROM_ALL)
-endif()
+  # must be after test and unsupported, for configuring buildtests.in
+  add_subdirectory(scripts EXCLUDE_FROM_ALL)
 
-# add SYCL
-option(EIGEN_TEST_SYCL "Add Sycl support." OFF)
-if(EIGEN_TEST_SYCL)
-  set (CMAKE_MODULE_PATH "${CMAKE_ROOT}/Modules" "cmake/Modules/" "${CMAKE_MODULE_PATH}")
-  include(FindComputeCpp)
-endif()
+  # TODO: consider also replacing EIGEN_BUILD_BTL by a custom target "make btl"?
+  if(EIGEN_BUILD_BTL)
+    add_subdirectory(bench/btl EXCLUDE_FROM_ALL)
+  endif()
 
-add_subdirectory(unsupported)
+  if(NOT WIN32)
+    add_subdirectory(bench/spbench EXCLUDE_FROM_ALL)
+  endif()
 
-add_subdirectory(demos EXCLUDE_FROM_ALL)
+  configure_file(scripts/cdashtesting.cmake.in cdashtesting.cmake @ONLY)
 
-# must be after test and unsupported, for configuring buildtests.in
-add_subdirectory(scripts EXCLUDE_FROM_ALL)
+  option(EIGEN_FAILTEST "Enable failtests." OFF)
+  if(EIGEN_FAILTEST)
+    add_subdirectory(failtest)
+  endif()
 
-# TODO: consider also replacing EIGEN_BUILD_BTL by a custom target "make btl"?
-if(EIGEN_BUILD_BTL)
-  add_subdirectory(bench/btl EXCLUDE_FROM_ALL)
-endif(EIGEN_BUILD_BTL)
-
-if(NOT WIN32)
-  add_subdirectory(bench/spbench EXCLUDE_FROM_ALL)
-endif(NOT WIN32)
-
-configure_file(scripts/cdashtesting.cmake.in cdashtesting.cmake @ONLY)
-
-if(EIGEN_BUILD_TESTING)
   ei_testing_print_summary()
 endif()
 
 message(STATUS "")
 message(STATUS "Configured Eigen ${EIGEN_VERSION_NUMBER}")
 message(STATUS "")
-
-option(EIGEN_FAILTEST "Enable failtests." OFF)
-if(EIGEN_FAILTEST)
-  add_subdirectory(failtest)
-endif()
 
 string(TOLOWER "${CMAKE_GENERATOR}" cmake_generator_tolower)
 if(cmake_generator_tolower MATCHES "makefile")
@@ -510,15 +507,17 @@ if(cmake_generator_tolower MATCHES "makefile")
   message(STATUS "              |   Or:")
   message(STATUS "              |     cmake . -DINCLUDE_INSTALL_DIR=yourdir")
   message(STATUS "make doc      | Generate the API documentation, requires Doxygen & LaTeX")
+if(EIGEN_BUILD_TESTING)
   message(STATUS "make check    | Build and run the unit-tests. Read this page:")
   message(STATUS "              |   http://eigen.tuxfamily.org/index.php?title=Tests")
+endif()
 if(EIGEN_ADD_BLAS_LAPACK_TARGETS)
   message(STATUS "make blas     | Build BLAS library (not the same thing as Eigen)")
   message(STATUS "make lapack   | Build LAPACK library (not the same thing as Eigen)")
 endif()
   message(STATUS "make uninstall| Removes files installed by make install")
   message(STATUS "--------------+--------------------------------------------------------------")
-else()
+elseif(EIGEN_BUILD_TESTING)
   message(STATUS "To build/run the unit tests, read this page:")
   message(STATUS "  http://eigen.tuxfamily.org/index.php?title=Tests")
 endif()
